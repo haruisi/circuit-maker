@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>回路図メーカー v3.5</title>
+  <title>回路図メーカー v3.6</title>
 
   <style>
     * {
@@ -336,11 +336,24 @@
     };
 
     function onButton(el, handler) {
-      el.addEventListener("pointerdown", e => {
+      let lastRun = 0;
+
+      const run = e => {
+        const now = performance.now();
+
+        // iPad Safariでは touchstart / pointerdown / mousedown が連続することがあるため重複防止
+        if (now - lastRun < 90) return;
+        lastRun = now;
+
         e.preventDefault();
         e.stopPropagation();
         handler(e);
-      }, { passive: false });
+      };
+
+      // 早い連打・素早い切替に対応するため、最速で拾えるイベントも併用
+      el.addEventListener("touchstart", run, { passive: false });
+      el.addEventListener("pointerdown", run, { passive: false });
+      el.addEventListener("mousedown", run, { passive: false });
     }
 
     document.querySelectorAll("[data-tool]").forEach(btn => {
@@ -366,12 +379,11 @@
 
     function clearAll() {
       if (items.length === 0) return;
-      if (confirm("全部消しますか？")) {
-        saveHistory();
-        items = [];
-        cancelDrafts();
-        draw();
-      }
+
+      saveHistory();
+      items = [];
+      cancelDrafts();
+      draw();
     }
 
     canvas.addEventListener("touchstart", e => {
