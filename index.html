@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>回路図メーカー v3.6</title>
+  <title>回路図メーカー v3.7</title>
 
   <style>
     * {
@@ -32,28 +32,22 @@
     }
 
     .toolbar {
-      width: 86px;
+      width: 156px;
       height: 100%;
       background: #ffffff;
       border-right: 1px solid #d8d8d8;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 8px 6px 88px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-content: start;
       gap: 7px;
-      overflow-y: auto;
+      padding: 8px 7px 88px;
+      overflow: hidden;
       z-index: 30;
-      touch-action: pan-y;
+      touch-action: none;
     }
 
     .tool-group {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      padding-bottom: 7px;
-      margin-bottom: 3px;
-      border-bottom: 1px solid #eeeeee;
+      display: contents;
     }
 
     .tool-btn,
@@ -74,9 +68,9 @@
     }
 
     .tool-btn {
-      width: 70px;
-      min-height: 46px;
-      font-size: 11px;
+      width: 68px;
+      min-height: 48px;
+      font-size: 10.5px;
     }
 
     .tool-btn .icon {
@@ -153,7 +147,7 @@
 
     .bottom-bar {
       position: fixed;
-      left: 86px;
+      left: 156px;
       right: 0;
       bottom: 0;
       height: 76px;
@@ -262,9 +256,6 @@
       <button class="bottom-btn save" id="saveBtn">
         <span class="icon">⬇</span><span>保存</span>
       </button>
-      <button class="bottom-btn save" id="copyBtn">
-        <span class="icon">⧉</span><span>コピー</span>
-      </button>
     </nav>
   </div>
 
@@ -336,24 +327,12 @@
     };
 
     function onButton(el, handler) {
-      let lastRun = 0;
-
-      const run = e => {
-        const now = performance.now();
-
-        // iPad Safariでは touchstart / pointerdown / mousedown が連続することがあるため重複防止
-        if (now - lastRun < 90) return;
-        lastRun = now;
-
+      // v3.7: スクロール式をやめたので、pointerdownだけで即反応させる
+      el.addEventListener("pointerdown", e => {
         e.preventDefault();
         e.stopPropagation();
         handler(e);
-      };
-
-      // 早い連打・素早い切替に対応するため、最速で拾えるイベントも併用
-      el.addEventListener("touchstart", run, { passive: false });
-      el.addEventListener("pointerdown", run, { passive: false });
-      el.addEventListener("mousedown", run, { passive: false });
+      }, { passive: false });
     }
 
     document.querySelectorAll("[data-tool]").forEach(btn => {
@@ -364,7 +343,6 @@
     onButton(document.getElementById("redoBtn"), redo);
     onButton(document.getElementById("clearBtn"), clearAll);
     onButton(document.getElementById("saveBtn"), saveTransparentPNG);
-    onButton(document.getElementById("copyBtn"), copyTransparentPNG);
 
     function setTool(nextTool) {
       currentTool = nextTool;
@@ -1107,22 +1085,6 @@
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-      });
-    }
-
-    async function copyTransparentPNG() {
-      createExportBlob(async blob => {
-        if (!navigator.clipboard || !window.ClipboardItem) {
-          alert("この環境では画像コピーに対応していません。PNG保存を使ってください。");
-          return;
-        }
-
-        try {
-          await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-          statusEl.textContent = "PNGをコピーしました。GoodNotesに貼り付けできます。";
-        } catch (err) {
-          alert("画像コピーに失敗しました。PNG保存を使ってください。");
-        }
       });
     }
 
